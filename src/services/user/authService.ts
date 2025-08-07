@@ -3,12 +3,10 @@ import { IUser } from "../../models/user/userModel";
 
 
 export class AuthService {
-
     private userRepositories: UserRepositories;
-
     constructor() {
         this.userRepositories = new UserRepositories();
-      }
+    }
 
     async userSignup(username:string,email:string,password:string):Promise<{
         success:boolean;
@@ -19,10 +17,9 @@ export class AuthService {
             email:string
         }
     }>{
-
         const existingUser = await this.userRepositories.findUserByEmail(email)
 
-        if(existingUser){
+        if(existingUser){        
             return {success:false,message:"User already exists"}
         }
 
@@ -39,7 +36,6 @@ export class AuthService {
             };
         }
 
-
         return {
             success: true,
             message: "User created successfully",
@@ -48,8 +44,6 @@ export class AuthService {
               username: savedDetails.username,
               email: savedDetails.email,
             },
-
-          };
-        
+        };     
     }
 }
