@@ -6,7 +6,7 @@ export class UserRepositories {
         return await User.create(data)
     }
 
-    async findUserByEmail(email:string):Promise<Iuser|null>{
+    async findUserByEmail(email:string):Promise<IUser|null>{
         const data = await User.findOne({email})
         const userData = data?.toObject()
 
