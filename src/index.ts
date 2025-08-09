@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import mongoose from 'mongoose'
 import userAuth_route from './routes/user/authRoutes'
+import problem_route from './routes/user/problemRoute';
 
 dotenv.config()
 
@@ -32,6 +33,7 @@ mongoose.connect(MONGO_DB_URL)
 });
 
 app.use('/auth',userAuth_route)
+app.use('/',problem_route)
 
 
 

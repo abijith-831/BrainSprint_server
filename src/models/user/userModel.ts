@@ -7,7 +7,7 @@ export interface IUser extends Document {
     password:string;
     image?:string;
 }
-
+ 
 const userSchema:Schema = new Schema(
     {
         username: {
