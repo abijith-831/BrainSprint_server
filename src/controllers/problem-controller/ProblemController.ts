@@ -19,6 +19,8 @@ class ProblemController {
 
     async testProblem(req:Request,res:Response){
         const { code, language, title, description } = req.body;
+        console.log('daa',description);
+        
         const result = await problemService.testProblem({ code, language, title, description });
         return res.status(result.success ? 200 : 400).json(result);
     }
