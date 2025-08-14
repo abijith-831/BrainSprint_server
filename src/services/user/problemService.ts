@@ -70,69 +70,143 @@ export class ProblemService {
     }
   }
 
-  async testProblem(payload: TestProblemPayload): Promise<{
-    success: boolean;
-    message: string;
-    results?: { input: string; expected: string; actual: string }[];
-  }> {
-    try {
-      const languageMap: Record<string, number> = {
-        javascript: 63, // Node.js 12
-        python: 71, // Python 3
-        java: 62, // Java 17
-        cpp: 54, // C++ (GCC 9.2)
+  // Modified testProblem method with pass/fail checking
+
+async testProblem(payload: TestProblemPayload): Promise<{
+  success: boolean;
+  message: string;
+  results?: { 
+    input: string; 
+    expected: string; 
+    actual: string; 
+    passed: boolean;
+    error?: string;
+  }[];
+  summary?: {
+    totalTests: number;
+    passed: number;
+    failed: number;
+    allPassed: boolean;
+  };
+}> {
+  try {
+    const languageMap: Record<string, number> = {
+      javascript: 63, 
+      python: 71, 
+      java: 62,
+      cpp: 54, 
+    };
+
+    const languageId = languageMap[payload.language.toLowerCase()];
+    if (!languageId) {
+      return {
+        success: false,
+        message: `Unsupported language: ${payload.language}`,
       };
+    }
 
-      const languageId = languageMap[payload.language.toLowerCase()];
-      if (!languageId) {
-        return {
-          success: false,
-          message: `Unsupported language: ${payload.language}`,
-        };
-      }
+    const testCases = this.parseTestCasesFromDescription(payload.description);
+    if (testCases.length === 0) {
+      return { success: false, message: "No test cases found in problem description" };
+    }
+    
+    const results = [];
+    let passedCount = 0;
 
-      // Extract test cases from description
-      const testCases = this.parseTestCasesFromDescription(payload.description);
-      if (testCases.length === 0) {
-        return { success: false, message: "No test cases found in problem description" };
-      }
-
-      // Run all test cases
-      const results = [];
+    
+    
+    
+    
       for (const tc of testCases) {
-        const response = await axios.post(
-          "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
-          {
-            source_code: payload.code,
-            language_id: languageId,
-            stdin: tc.input,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "X-RapidAPI-Key": process.env.RAPIDAPI_KEY!,
-              "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
-            },
-          }
-        );
+        const numsMatch = tc.input.match(/nums\s*=\s*(\[[^\]]*\])/);
+        const targetMatch = tc.input.match(/target\s*=\s*(\d+)/);
+      
+        const nums = numsMatch ? JSON.parse(numsMatch[1]) : [];
+        const target = targetMatch ? Number(targetMatch[1]) : 0;
+      
+        console.log("nums:", nums, "target:", target);
 
-        const actualOutput = (response.data.stdout || response.data.stderr || "").trim();
+        const finalCode = `
+        ${payload.code}
+      
+        console.log(twoSum(${JSON.stringify(nums)}, ${target}));
+        `;
+        
+        try {
+          const response = await axios.post(
+            "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
+            {
+              source_code: finalCode,
+              language_id: languageId,
+              stdin: tc.input,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "X-RapidAPI-Key": process.env.RAPIDAPI_KEY!,
+                "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
+              },
+            }
+          );
+
+
+          
+
+        const actualOutput = (response.data.stdout || "").trim();
+        const expectedOutput = tc.output.trim();
+        
+        const hasError = response.data.stderr && response.data.stderr.trim() !== "";
+        const compilationError = response.data.compile_output && response.data.compile_output.trim() !== "";
+        
+        const normalize = (str: string) => str.split("\n")[0].replace(/\s+/g, '');
+        const passed = !hasError && !compilationError && normalize(actualOutput) === normalize(expectedOutput);
+        
+        if (passed) {
+          passedCount++;
+        }
 
         results.push({
           input: tc.input,
-          expected: tc.output,
+          expected: expectedOutput,
           actual: actualOutput,
+          passed: passed,
+          error: hasError ? response.data.stderr : (compilationError ? response.data.compile_output : undefined)
+        });
+        
+        
+      } catch (error:any) {
+        console.error("Judge0 request failed:", error.response?.status, error.response?.data || error.message);
+        results.push({
+          input: tc.input,
+          expected: tc.output.trim(),
+          actual: "",
+          passed: false,
+          error: `Execution error: ${error.message || 'Unknown error'}`
         });
       }
-
-      return {
-        success: true,
-        message: "Code tested successfully",
-        results,
-      };
-    } catch (error) {
-      console.error(error);
-      return { success: false, message: "Failed to test problem" };
     }
+
+    const summary = {
+      totalTests: testCases.length,
+      passed: passedCount,
+      failed: testCases.length - passedCount,
+      allPassed: passedCount === testCases.length
+    };
+    
+    console.log('results',results);
+    console.log('summary',summary);
+    
+    
+    return {
+      success: true,
+      message: `Code tested successfully. ${passedCount}/${testCases.length} tests passed.`,
+      results,
+      summary
+    };
+    
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "Failed to test problem" };
   }
+}
 }
