@@ -70,8 +70,6 @@ export class ProblemService {
     }
   }
 
-  // Modified testProblem method with pass/fail checking
-
 async testProblem(payload: TestProblemPayload): Promise<{
   success: boolean;
   message: string;
