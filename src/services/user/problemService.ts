@@ -1,6 +1,16 @@
 import { IProblem } from "../../models/user/problemModel";
 import { ProblemRepositories } from "../../repositories/implementation/ProblemRepository";
 import axios from "axios";
+import OpenAI from "openai";
+import "dotenv/config";
+
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("Missing OPENAI_API_KEY in environment");
+}
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 interface TestProblemPayload {
   code: string;
@@ -95,6 +105,9 @@ async testProblem(payload: TestProblemPayload): Promise<{
       cpp: 54, 
     };
 
+    console.log('code',payload.code);
+    
+
     const languageId = languageMap[payload.language.toLowerCase()];
     if (!languageId) {
       return {
@@ -112,31 +125,23 @@ async testProblem(payload: TestProblemPayload): Promise<{
     let passedCount = 0;
 
     
-    
-    
-    
-      for (const tc of testCases) {
-        const numsMatch = tc.input.match(/nums\s*=\s*(\[[^\]]*\])/);
-        const targetMatch = tc.input.match(/target\s*=\s*(\d+)/);
-      
-        const nums = numsMatch ? JSON.parse(numsMatch[1]) : [];
-        const target = targetMatch ? Number(targetMatch[1]) : 0;
-      
-        console.log("nums:", nums, "target:", target);
+    for (const tc of testCases) {
 
-        const finalCode = `
-        ${payload.code}
+      const consoleLogCall = await generateConsoleLogCall("twoSum", tc.input, payload.language);
+
+      const finalCode = `
+      ${payload.code}
       
-        console.log(twoSum(${JSON.stringify(nums)}, ${target}));
-        `;
-        
+      ${consoleLogCall}
+      `;
+
         try {
           const response = await axios.post(
             "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
             {
               source_code: finalCode,
               language_id: languageId,
-              stdin: tc.input,
+              
             },
             {
               headers: {
@@ -146,6 +151,9 @@ async testProblem(payload: TestProblemPayload): Promise<{
               },
             }
           );
+
+          console.log('resss',response);
+          
 
 
           
@@ -207,4 +215,41 @@ async testProblem(payload: TestProblemPayload): Promise<{
     return { success: false, message: "Failed to test problem" };
   }
 }
+
+
 }
+
+async function generateConsoleLogCall(
+  functionName: string,
+  testCaseInput: string,
+  language: string
+): Promise<string> {
+  if (!openai) {
+    throw new Error("OpenAI API key not configured");
+  }
+
+  const prompt = `
+  You are a helper that generates test case invocations in ${language}.
+  Function name: ${functionName}
+  Test case input: ${testCaseInput}
+
+  Rules:
+  - Output only ONE line of code.
+  - The line must be a console.log() calling the function with parsed arguments.
+  - Example: console.log(twoSum([2,7,11,15], 9));
+  - Do NOT include explanations, comments, imports, or extra text.
+  - Do NOT wrap code in backticks.
+  `;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: "You generate exact function calls for test cases." },
+      { role: "user", content: prompt }
+    ],
+    temperature: 0,
+  });
+
+  return completion.choices[0].message.content?.trim() || "";
+}
+
