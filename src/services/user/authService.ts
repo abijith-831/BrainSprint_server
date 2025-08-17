@@ -9,11 +9,7 @@ export class AuthService {
         this.userRepositories = new UserRepositories();
     }
 
-    async userSignup(
-        username: string,
-        email: string,
-        password: string
-    ): Promise<{
+    async userSignup(username: string, email: string,password: string ): Promise<{
         success: boolean;
         message: string;
         data?: {
@@ -64,16 +60,15 @@ export class AuthService {
         };
     }
 
-    async userLogin(
-        email: string,
-        password: string
-    ): Promise<{
+    async userLogin( email: string,password: string ): Promise<{
         success: boolean;
         message: string;
         data?: {
             userId: string;
             username: string;
             email: string;
+            accessToken:string;
+            refreshToken:string
         };
     }> {
         const existingUser = await this.userRepositories.findUserByEmail(email);
@@ -88,6 +83,9 @@ export class AuthService {
             return { success: false, message: "Invalid email or password" };
         }
 
+        const accessToken = generateAccessToken(existingUser._id.toString());
+        const refreshToken = generateRefreshToken(existingUser._id.toString());
+
         return {
             success: true,
             message: "Login successful",
@@ -95,6 +93,8 @@ export class AuthService {
                 userId: existingUser._id,
                 username: existingUser.username,
                 email: existingUser.email,
+                accessToken,
+                refreshToken
             },
         };
     }
