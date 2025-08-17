@@ -45,6 +45,12 @@ export class AuthService {
             };
         }
 
+        const accessToken = generateAccessToken(savedDetails.id)
+        const refreshToken = generateRefreshToken(savedDetails.id )
+
+        console.log('access',accessToken);
+        console.log('refresh',refreshToken);
+        
         return {
             success: true,
             message: "User created successfully",
@@ -52,6 +58,8 @@ export class AuthService {
                 userId: savedDetails.id,
                 username: savedDetails.username,
                 email: savedDetails.email,
+                accessToken,
+                refreshToken
             },
         };
     }
