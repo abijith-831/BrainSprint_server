@@ -26,3 +26,16 @@ export const verifyRefreshToken = (token:string)=>{
         return null
     }
 }
+
+export const refreshAccessToken = (refreshToken: string) => {
+    const decoded = verifyRefreshToken(refreshToken);
+    if (!decoded) return null;
+  
+    const newAccessToken = generateAccessToken(decoded.userId);
+    const newRefreshToken = generateRefreshToken(decoded.userId);
+  
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken, // optional (depends on your flow)
+    };
+};
