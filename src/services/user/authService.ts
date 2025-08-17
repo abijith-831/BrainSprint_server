@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { UserRepositories } from "../../repositories/implementation/UserRepository";
 import { IUser } from "../../models/user/userModel";
+import { generateAccessToken , generateRefreshToken } from "../../utils/token.util";
 
 export class AuthService {
     private userRepositories: UserRepositories;
@@ -19,6 +20,8 @@ export class AuthService {
             userId: string;
             username: string;
             email: string;
+            accessToken:string;
+            refreshToken:string
         };
     }> {
         const existingUser = await this.userRepositories.findUserByEmail(email);
