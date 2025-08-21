@@ -51,9 +51,7 @@ export class ProblemService {
     return testCases;
   }
 
-  async getProblems(): Promise<{
-    success: boolean;
-    message: string;
+  async getProblems(): Promise<{ success: boolean; message: string;
     data?: (IProblem & { testCases: ExampleTestCase[] })[];
   }> {
     try {
@@ -249,6 +247,9 @@ async function generateConsoleLogCall(
     ],
     temperature: 0,
   });
+
+  console.log('');
+  
 
   return completion.choices[0].message.content?.trim() || "";
 }
