@@ -26,6 +26,7 @@ export interface IUser extends Document {
         endYear?: number;
       }[];
     };
+    solutions?: mongoose.Types.ObjectId[];
 }
  
 const userSchema: Schema = new Schema(
@@ -71,6 +72,7 @@ const userSchema: Schema = new Schema(
         },
       ],
     },
+    solutions: [{ type: Schema.Types.ObjectId, ref: "Solution" }],
   },
   {
     timestamps: true,
