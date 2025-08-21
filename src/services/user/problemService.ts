@@ -17,6 +17,7 @@ interface TestProblemPayload {
   language: string;
   title: string;
   description: string;
+  userId?:string
 }
 
 interface ExampleTestCase {

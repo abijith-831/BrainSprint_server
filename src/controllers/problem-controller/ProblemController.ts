@@ -1,5 +1,7 @@
 import { Request , Response } from 'express'
 import { ProblemService } from '../../services/user/problemService'
+import { AuthRequest } from "../../middleware/authMiddleware";
+
 
 const problemService = new ProblemService()
 
@@ -17,11 +19,11 @@ class ProblemController {
         
     }
 
-    async testProblem(req:Request,res:Response){
+    async testProblem(req:AuthRequest,res:Response){
         const { code, language, title, description } = req.body;
-        // console.log('daa',description);
-        
-        const result = await problemService.testProblem({ code, language, title, description });
+        const userId = req.userId;
+
+        const result = await problemService.testProblem({ code, language, title, description , userId });
         return res.status(result.success ? 200 : 400).json(result);
     }
 }
