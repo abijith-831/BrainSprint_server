@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IProblem extends Document {
+  _id: string;
   id: number;
   title: string;
   description: string;

@@ -20,10 +20,12 @@ class ProblemController {
     }
 
     async testProblem(req:AuthRequest,res:Response){
-        const { code, language, title, description } = req.body;
+        
+        const { code,problem_id, language, title, description } = req.body;
+        
         const userId = req.userId;
 
-        const result = await problemService.testProblem({ code, language, title, description , userId });
+        const result = await problemService.testProblem({ code, problem_id, language, title, description , userId });
         return res.status(result.success ? 200 : 400).json(result);
     }
 }

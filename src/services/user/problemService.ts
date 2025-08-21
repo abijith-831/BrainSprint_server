@@ -3,6 +3,7 @@ import { ProblemRepositories } from "../../repositories/implementation/ProblemRe
 import axios from "axios";
 import OpenAI from "openai";
 import "dotenv/config";
+import { SolutionService } from "../../routes/user/solutionService";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("Missing OPENAI_API_KEY in environment");
@@ -14,6 +15,7 @@ const openai = new OpenAI({
 
 interface TestProblemPayload {
   code: string;
+  problem_id: string;
   language: string;
   title: string;
   description: string;
@@ -197,9 +199,25 @@ async testProblem(payload: TestProblemPayload): Promise<{
       failed: testCases.length - passedCount,
       allPassed: passedCount === testCases.length
     };
+
+
+
+    const resultStatus = summary.allPassed
+    ? "Accepted"
+    : summary.failed > 0
+    ? "Wrong Answer"
+    : "Runtime Error";
+
     
-    console.log('results',results);
-    console.log('summary',summary);
+    await SolutionService.saveSolution({
+      userId: payload.userId,
+      questionId: payload.problem_id,
+      code: payload.code,
+      language: payload.language,
+      result: resultStatus,
+    });
+      
+
     
     
     return {
